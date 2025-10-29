@@ -1,0 +1,557 @@
+//1.1
+#include <iostream>
+using namespace std;
+
+char board[3][3] = {
+    {'1', '2', '3'},
+    {'4', '5', '6'},
+    {'7', '8', '9'}
+};
+
+char currentPlayer = 'X';
+int moveCount = 0;
+
+void display_board() {
+    for (int i = 0; i < 3; i++) {
+        cout << " " << board[i][0] << " | " << board[i][1] << " | " << board[i][2];
+        if (i < 2) {
+            cout << "\n---|---|---\n";
+        }
+    }
+    cout << "\n";
+}
+
+bool checkWin() {
+    for (int i = 0; i < 3; i++) {
+        if (board[i][0] == currentPlayer && board[i][1] == currentPlayer && board[i][2] == currentPlayer)
+            return true;
+
+        if (board[0][i] == currentPlayer && board[1][i] == currentPlayer && board[2][i] == currentPlayer)
+            return true;
+    }
+
+
+    if (board[0][0] == currentPlayer && board[1][1] == currentPlayer && board[2][2] == currentPlayer)
+        return true;
+
+    if (board[0][2] == currentPlayer && board[1][1] == currentPlayer && board[2][0] == currentPlayer)
+        return true;
+
+    return false;
+}
+
+bool checkDraw() {
+    return moveCount == 9;
+}
+
+void switchPlayer() {
+    currentPlayer = (currentPlayer == 'X') ? 'O' : 'X';
+}
+
+int main() {
+    int choice;
+    bool gameOver = false;
+
+    while (!gameOver) {
+        display_board();
+
+        cout << "Player " << currentPlayer << ", enter a number (1-9): ";
+        cin >> choice;
+
+        if (choice < 1 || choice > 9) {
+            cout << "Invalid input!!! Please enter number between 1 and 9.\n";
+            continue;
+        }
+
+        int row = (choice - 1) / 3;
+        int col = (choice - 1) % 3;
+
+        if (board[row][col] == 'X' || board[row][col] == 'O') {
+            cout << "Cell already taken! Try again...\n";
+            continue;
+        }
+
+        board[row][col] = currentPlayer;
+        moveCount++;
+
+        if (checkWin()) {
+            display_board();
+            cout << "Player " << currentPlayer << " wins!\n";
+            gameOver = true;
+            break;
+        }
+
+        else if (checkDraw()) {
+            display_board();
+            cout << "It's a draw!\n";
+            gameOver = true;
+            break;
+        }
+
+        switchPlayer();
+    }
+    cout << "\nGame Over. Thanks for playing!\n";
+    return 0;
+}
+
+
+//1.2 with ai
+#include <iostream>
+using namespace std;
+
+char board[3][3] = {
+    {'1','2','3'},
+    {'4','5','6'},
+    {'7','8','9'}
+};
+
+char human = 'X';
+char ai = 'O';
+int moveCount = 0;
+
+void display_board() {
+    for (int i = 0; i < 3; i++) {
+        cout << " " << board[i][0] << " | " << board[i][1] << " | " << board[i][2];
+        if (i < 2) cout << "\n---|---|---\n";
+    }
+    cout << "\n";
+}
+
+bool checkWin(char player) {
+    for (int i = 0; i < 3; i++) {
+        if (board[i][0] == player && board[i][1] == player && board[i][2] == player) return true;
+        if (board[0][i] == player && board[1][i] == player && board[2][i] == player) return true;
+    }
+    if (board[0][0] == player && board[1][1] == player && board[2][2] == player) return true;
+    if (board[0][2] == player && board[1][1] == player && board[2][0] == player) return true;
+    return false;
+}
+
+bool checkDraw() {
+    return moveCount == 9;
+}
+
+// Simplified minimax WITH moveCount tracking
+int minimax(bool isMaximizing) {
+    if (checkWin(ai)) return +10;
+    if (checkWin(human)) return -10;
+    if (checkDraw()) return 0;
+
+    int bestScore = isMaximizing ? -1000 : 1000;
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            if (board[i][j] != 'X' && board[i][j] != 'O') {
+                char original = board[i][j];
+                board[i][j] = isMaximizing ? ai : human;
+                moveCount++;
+
+                int score = minimax(!isMaximizing);
+
+                board[i][j] = original;
+                moveCount--;
+
+                if (isMaximizing)
+                    bestScore = max(bestScore, score);
+                else
+                    bestScore = min(bestScore, score);
+            }
+        }
+    }
+
+    return bestScore;
+}
+
+void aiMove() {
+    int bestScore = -1000;
+    int bestRow = -1, bestCol = -1;
+
+    for (int i = 0; i < 3; i++) {
+        for (int j = 0; j < 3; j++) {
+            if (board[i][j] != 'X' && board[i][j] != 'O') {
+                char original = board[i][j];
+                board[i][j] = ai;
+                moveCount++;
+
+                int score = minimax(false);
+
+                board[i][j] = original;
+                moveCount--;
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestRow = i;
+                    bestCol = j;
+                }
+            }
+        }
+    }
+
+    board[bestRow][bestCol] = ai;
+    moveCount++;
+
+    cout << "AI played at position: " << (bestRow * 3 + bestCol + 1) << "\n\n";
+}
+
+int main() {
+    int choice;
+    bool gameOver = false;
+
+    while (!gameOver) {
+        display_board();
+        cout << "Player " << human << ", enter a number (1-9): ";
+        cin >> choice;
+
+        if (choice < 1 || choice > 9) {
+            cout << "Invalid input. Please enter a number between 1 and 9.\n";
+            continue;
+        }
+
+        int row = (choice - 1) / 3;
+        int col = (choice - 1) % 3;
+
+        if (board[row][col] == 'X' || board[row][col] == 'O') {
+            cout << "Cell already taken. Try again...\n";
+            continue;
+        }
+
+        board[row][col] = human;
+        moveCount++;
+
+        if (checkWin(human)) {
+            display_board();
+            cout << "Player " << human << " wins!\n";
+            gameOver = true;
+            break;
+        } else if (checkDraw()) {
+            display_board();
+            cout << "It's a draw!\n";
+            gameOver = true;
+            break;
+        }
+
+        aiMove();
+
+        if (checkWin(ai)) {
+            display_board();
+            cout << "AI (" << ai << ") wins!\n";
+            gameOver = true;
+            break;
+        } else if (checkDraw()) {
+            display_board();
+            cout << "It's a draw!\n";
+            gameOver = true;
+            break;
+        }
+    }
+
+    cout << "\nGame Over. Thanks for playing!\n";
+    return 0;
+}
+
+===============================================================================================
+//4. graph colorinng csp 
+#include <iostream>
+#include <vector>
+using namespace std;
+
+class GraphColoring {
+    int n, m;
+    vector<vector<int>> adj;
+    vector<int> color;
+
+public:
+    GraphColoring(int vertices, int colors) {
+        n = vertices;
+        m = colors;
+        adj.resize(n, vector<int>(n, 0));
+        color.resize(n, 0);
+    }
+
+    void addEdge(int u, int v) {
+        adj[u][v] = adj[v][u] = 1;
+    }
+
+    bool isSafe(int v, int c) {
+        for (int i = 0; i < n; i++)
+            if (adj[v][i] && color[i] == c)
+                return false;
+        return true;
+    }
+
+    bool solveColoring(int v) {
+        if (v == n) return true;
+
+        for (int c = 1; c <= m; c++) {
+            if (isSafe(v, c)) {
+                color[v] = c;
+                if (solveColoring(v + 1)) return true;
+                color[v] = 0;
+            }
+        }
+        return false;
+    }
+
+    void printSolution() {
+        cout << "Color assignment:\n";
+        for (int i = 0; i < n; i++)
+            cout << "Vertex " << i << " -> Color " << color[i] << endl;
+    }
+};
+
+int main() {
+    GraphColoring g(4, 3);
+    g.addEdge(0, 1);
+    g.addEdge(0, 2);
+    g.addEdge(0, 3);
+    g.addEdge(1, 3);
+
+    if (g.solveColoring(0))
+        g.printSolution();
+    else
+        cout << "No solution found.\n";
+
+    return 0;
+}
+
+
+==================================================================================================
+LAB 5  Predicate Logic Implementation (Cricket Team with Runs & Wickets):-
+% -----------------------------------------------------
+% Program: Predicate Logic Implementation - Cricket Team (Extended)
+% -----------------------------------------------------
+
+% --- Facts: player(Name, Role) ---
+player(rohit, batsman).
+player(virat, batsman).
+player(gill, batsman).
+player(suryakumar, batsman).
+player(hardik, allrounder).
+player(jadeja, allrounder).
+player(bumrah, bowler).
+player(shami, bowler).
+player(dhoni, wicket_keeper).
+
+% --- Facts: team_member(Name, Team) ---
+team_member(rohit, india).
+team_member(virat, india).
+team_member(gill, india).
+team_member(suryakumar, india).
+team_member(hardik, india).
+team_member(jadeja, india).
+team_member(bumrah, india).
+team_member(shami, india).
+team_member(dhoni, india).
+
+% --- Facts: captain & vice-captain ---
+captain(rohit, india).
+vice_captain(hardik, india).
+
+% --- Performance Facts ---
+runs(rohit, 7200).
+runs(virat, 13000).
+runs(gill, 1800).
+runs(suryakumar, 1200).
+runs(hardik, 2500).
+runs(jadeja, 2500).
+runs(dhoni, 10500).
+wickets(bumrah, 250).
+wickets(shami, 210).
+wickets(jadeja, 190).
+wickets(hardik, 90).
+
+% --- Rules for Role Type ---
+batsman(X) :- player(X, batsman).
+bowler(X) :- player(X, bowler).
+allrounder(X) :- player(X, allrounder).
+keeper(X) :- player(X, wicket_keeper).
+
+% --- Teammates if both are in same team ---
+teammates(X, Y) :-
+    team_member(X, T),
+    team_member(Y, T),
+    X \= Y.
+
+% --- Seniority chain ---
+senior(dhoni, rohit).
+senior(rohit, virat).
+senior(virat, gill).
+
+% --- Experienced player ---
+experienced(X) :-
+    captain(X, _);
+    vice_captain(X, _).
+
+% --- Main bowler ---
+main_bowler(X) :-
+    bowler(X),
+    team_member(X, india).
+
+% --- Rules for Runs and Wickets Queries ---
+
+% Who scored more than given runs
+high_scorer(X, MinRuns) :-
+    runs(X, R),
+    R > MinRuns.
+
+% Who took more than given wickets
+top_bowler(X, MinWkts) :-
+    wickets(X, W),
+    W > MinWkts.
+
+% Find the top scorer (max runs)
+top_scorer(X) :-
+    runs(X, R),
+    \+ (runs(_, R2), R2 > R).
+
+% Find the top wicket taker
+best_bowler(X) :-
+    wickets(X, W),
+    \+ (wickets(_, W2), W2 > W).
+% --- End of Program ---
+Example Queries and Output
+?- batsman(virat).
+true.
+
+?- teammates(rohit, virat).
+true.
+
+?- experienced(hardik).
+true.
+
+?- runs(virat, R).
+R = 13000.
+
+?- wickets(bumrah, W).
+W = 250.
+
+?- high_scorer(X, 5000).
+X = rohit ;
+X = virat ;
+X = dhoni.
+
+?- top_bowler(X, 200).
+X = bumrah ;
+X = shami.
+
+?- top_scorer(X).
+X = virat.
+
+?- best_bowler(X).
+X = bumrah.
+
+
+===========================================================================
+// 6 prolog for expert system
+% -----------------------------------------------------
+% Program: Expert System - Simple Disease Diagnosis
+% Author : Nilesh Sabale
+% -----------------------------------------------------
+
+% --- Knowledge Base: Diseases and their Symptoms ---
+% Each disease is defined in terms of the symptoms that must be present.
+
+disease(cold) :-
+    symptom(sneezing),
+    symptom(runny_nose),
+    symptom(sore_throat),
+    symptom(mild_cough).
+
+disease(flu) :-
+    symptom(fever),
+    symptom(headache),
+    symptom(body_ache),
+    symptom(cough),
+    symptom(chills).
+
+disease(malaria) :-
+    symptom(fever),
+    symptom(chills),
+    symptom(sweating),
+    symptom(headache),
+    symptom(vomiting).
+
+disease(typhoid) :-
+    symptom(fever),
+    symptom(stomach_pain),
+    symptom(loss_of_appetite),
+    symptom(weakness),
+    symptom(headache).
+
+disease(covid) :-
+    symptom(fever),
+    symptom(cough),
+    symptom(loss_of_taste),
+    symptom(breathing_problem),
+    symptom(tiredness).
+
+disease(cough) :-
+    symptom(throat_pain),
+    symptom(chest_pain),
+    symptom(dry_cough).
+
+disease(dengue) :-
+    symptom(fever),
+    symptom(headache),
+    symptom(rashes),
+    symptom(joint_pain),
+    symptom(bleeding_nose).
+
+disease(asthma) :-
+    symptom(shortness_of_breath),
+    symptom(chest_tightness),
+    symptom(cough),
+    symptom(wheezing).
+
+% --- Suggest remedies (extra feature for marks) ---
+remedy(cold, 'Take rest, drink warm water, and use steam inhalation.').
+remedy(flu, 'Drink fluids, take paracetamol, and rest well.').
+remedy(malaria, 'Consult a doctor and take anti-malarial medicine.').
+remedy(typhoid, 'Drink boiled water and eat light food.').
+remedy(covid, 'Isolate yourself, drink fluids, and consult a doctor.').
+remedy(cough, 'Use cough syrup and avoid cold drinks.').
+remedy(dengue, 'Take paracetamol, avoid aspirin, and drink plenty of fluids.').
+remedy(asthma, 'Use inhaler and avoid dust or smoke.').
+
+% --- Start Predicate (like main() in C) ---
+start :-
+    write('-------------------------------------------------'), nl,
+    write('        EXPERT SYSTEM: DISEASE DIAGNOSIS          '), nl,
+    write('-------------------------------------------------'), nl,
+    write('Please answer the following questions with yes. or no.'), nl, nl,
+    diagnose.
+
+% --- Diagnosis Logic ---
+diagnose :-
+    disease(D),
+    write('You may be suffering from: '), write(D), nl,
+    remedy(D, R),
+    write('Suggested Remedy: '), write(R), nl,
+    nl,
+    fail.  % find all possible diseases
+
+diagnose :-
+    write('Diagnosis completed. Please consult a doctor for confirmation.'), nl.
+
+% --- Ask user for symptoms ---
+symptom(S) :-
+    write('Do you have '), write(S), write('? '),
+    read(Reply),
+    Reply = yes.
+
+% --- Extra Helper Rules ---
+% To explain logic and make it longer for marks
+
+% If the user has fever, it may be serious
+check_fever :-
+    symptom(fever),
+    write('You have fever. Please monitor your temperature regularly.'), nl.
+
+% If the user has breathing problems, show warning
+check_breathing :-
+    symptom(breathing_problem),
+    write('You have breathing issues. Seek medical attention if it worsens.'), nl.
+
+% End of Program
+% -----------------------------------------------------
+==========================================================================================
